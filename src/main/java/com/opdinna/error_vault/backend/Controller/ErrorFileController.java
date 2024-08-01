@@ -13,7 +13,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
@@ -27,7 +27,7 @@ public class ErrorFileController {
     }
 
     @GetMapping("/")
-    public List<ErrorFile> getAllErrorFiles(@RequestParam String param) {
+    public List<ErrorFile> getAllErrorFiles() {
         return errorFileService.getAllErrorFiles();
     }
 
@@ -36,10 +36,10 @@ public class ErrorFileController {
         return errorFileService.getErrorFile(id);
     }
 
-    @PutMapping("/createErrorFile")
+    @PostMapping("/createErrorFile")
     public String createErrorFile(@RequestBody ErrorFile errorFile) {
         errorFileService.addErrorFile(errorFile);
-        return errorFile;
+        return errorFile.toString();
     }
 
     @DeleteMapping("/deleteErrorFile/{id}")
