@@ -7,11 +7,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Entity
+// @Data
 @Table(name = "errors")
-@NoArgsConstructor
 @Getter
 public class ErrorFile {
 
@@ -45,6 +44,10 @@ public class ErrorFile {
 
     @Column(name = "reference_links")
     private List<String> referenceLinks;
+
+    public ErrorFile() {
+
+    }
 
     public ErrorFile(String heading, String projectName, List<String> labels, String codeBlockBeforeFix,
             String codeBlockAfterFix, String problemDescription, String solutionText, List<String> imageLinkList,

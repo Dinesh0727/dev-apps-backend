@@ -2,11 +2,14 @@ package com.opdinna.error_vault.backend.service;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import com.opdinna.error_vault.backend.model.ErrorFile;
 import com.opdinna.error_vault.backend.repository.ErrorFileRepository;
 
 import jakarta.transaction.Transactional;
 
+@Service
 public class ErrorFileServiceImpl implements ErrorFileService {
 
     private ErrorFileRepository errorFileRepository;
