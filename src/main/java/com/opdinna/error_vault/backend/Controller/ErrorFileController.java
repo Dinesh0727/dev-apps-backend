@@ -37,8 +37,9 @@ public class ErrorFileController {
     }
 
     @PutMapping("/createErrorFile")
-    public void createErrorFile(@RequestBody ErrorFile errorFile) {
+    public String createErrorFile(@RequestBody ErrorFile errorFile) {
         errorFileService.addErrorFile(errorFile);
+        return errorFile;
     }
 
     @DeleteMapping("/deleteErrorFile/{id}")

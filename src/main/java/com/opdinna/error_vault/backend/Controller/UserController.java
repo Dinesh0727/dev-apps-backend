@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,6 +40,13 @@ public class UserController {
     public String addUser(@RequestBody User user) {
         userService.addUser(user);
         return user.toString();
+    }
+
+    @DeleteMapping("/deleteUser/{id}")
+    public String deleteUser(@PathVariable int id) {
+        User user = getUser(id);
+        userService.deleteUser(id);
+        return "Deleted the user : " + user.toString();
     }
 
 }

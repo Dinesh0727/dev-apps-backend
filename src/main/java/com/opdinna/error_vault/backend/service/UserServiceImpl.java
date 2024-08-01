@@ -32,4 +32,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NullPointerException("There is no user with id : " + id));
     }
 
+    public void deleteUser(Integer id) {
+        userRepository.deleteById(id);
+    }
 }

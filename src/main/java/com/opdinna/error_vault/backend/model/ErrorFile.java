@@ -99,4 +99,12 @@ public class ErrorFile {
         this.referenceLinks = referenceLinks;
     }
 
+    @Override
+    public String toString() {
+        return "ErrorFile [id=" + id + ", heading=" + heading + ", projectName=" + projectName + ", labels=" + labels
+                + ", codeBlockBeforeFix=" + codeBlockBeforeFix + ", codeBlockAfterFix=" + codeBlockAfterFix
+                + ", problemDescription=" + problemDescription + ", solutionText=" + solutionText + ", imageLinkList="
+                + imageLinkList + ", referenceLinks=" + referenceLinks + "]";
+    }
+
 }
