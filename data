@@ -1,0 +1,30 @@
+User
+|
+---- Error files
+
+
+Frontend part
+
+1) Home
+Will have the DevNotes and ErrorVault
+2) Login
+3) Home page with all the error page records in the form of cards 
+4) In the error Page, if you want to view, edit, delete
+
+Home -> Login or Sign Up -> Home page for user with cards -> Click card -> Error View 
+
+Error View
+
+Error File should have the following details
+1. Heading in short 
+2. Project Name
+3. Labels
+4. Code Blocks before solution and after solution
+5. Problem Description
+6. Solution Text
+7. Images we can upload on drive and insert a link for it
+8. Reference Links
+
+Back Button
+Save button
+Remove or add labels
