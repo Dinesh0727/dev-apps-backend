@@ -27,12 +27,12 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll();
     }
 
-    public User getUser(Integer id) {
+    public User getUser(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NullPointerException("There is no user with id : " + id));
     }
 
-    public void deleteUser(Integer id) {
+    public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
 }

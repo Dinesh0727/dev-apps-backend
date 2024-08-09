@@ -6,8 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.opdinna.error_vault.backend.model.ErrorFile;
 import com.opdinna.error_vault.backend.service.ErrorFileService;
 
-import org.springframework.web.bind.annotation.RequestParam;
-
 import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
