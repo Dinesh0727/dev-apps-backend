@@ -12,7 +12,8 @@ public interface UserService {
 
     public List<User> getUsers();
 
-    public User getUser(Long id);
+    public User getUser(String email);
 
-    public void deleteUser(Long id);
+    public void deleteUser(String email);
+
 }

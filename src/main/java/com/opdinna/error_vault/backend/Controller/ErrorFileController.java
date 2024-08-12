@@ -26,7 +26,9 @@ public class ErrorFileController {
 
     @GetMapping("/")
     public List<ErrorFile> getAllErrorFiles() {
-        return errorFileService.getAllErrorFiles();
+        System.out.println("Got a call to fetch all error files " + System.currentTimeMillis());
+        List<ErrorFile> allErrorFiles = errorFileService.getAllErrorFiles();
+        return allErrorFiles;
     }
 
     @GetMapping("/{id}")

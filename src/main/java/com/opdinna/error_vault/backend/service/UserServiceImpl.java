@@ -27,12 +27,12 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll();
     }
 
-    public User getUser(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new NullPointerException("There is no user with id : " + id));
+    public User getUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NullPointerException("There is no user with email : " + email));
     }
 
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+    public void deleteUser(String email) {
+        userRepository.deleteByEmail(email);
     }
 }

@@ -30,9 +30,9 @@ public class UserController {
         return userService.getUsers();
     }
 
-    @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id) {
-        return userService.getUser(id);
+    @GetMapping("/{email}")
+    public User getUser(@PathVariable String email) {
+        return userService.getUser(email);
     }
 
     @PostMapping("/addUser")
@@ -41,10 +41,10 @@ public class UserController {
         return user.toString();
     }
 
-    @DeleteMapping("/deleteUser/{id}")
-    public String deleteUser(@PathVariable Long id) {
-        User user = getUser(id);
-        userService.deleteUser(id);
+    @DeleteMapping("/deleteUser/{email}")
+    public String deleteUser(@PathVariable String email) {
+        User user = getUser(email);
+        userService.deleteUser(email);
         return "Deleted the user : " + user.toString();
     }
 
