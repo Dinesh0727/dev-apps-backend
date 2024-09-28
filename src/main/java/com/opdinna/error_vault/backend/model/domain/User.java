@@ -1,41 +1,24 @@
-package com.opdinna.error_vault.backend.model;
+package com.opdinna.error_vault.backend.model.domain;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
-@NoArgsConstructor
 public class User {
-
-    @Column(name = "id")
-    private Long id;
 
     private String username;
 
     @Id
     private String email;
 
+    public User() {
+    }
+
     public User(String username, String email) {
         this.username = username;
         this.email = email;
-    }
-
-    public User(Long id, String username, String email) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getUsername() {
@@ -56,7 +39,7 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", username=" + username + ", email=" + email + "]";
+        return "User [username=" + username + ", email=" + email + "]";
     }
 
 }

@@ -28,3 +28,23 @@ Error File should have the following details
 Back Button
 Save button
 Remove or add labels
+
+
+Structure of the data
+
+User, Role -> In the business logic
+DTO -> Created for different usecases, class and Mapper Class for it with the business model
+
+Example scenario : 
+User , Role classes 
+
+UserDTO for sending when the user details are to be sent
+UserCreationDTO, to get the user details like username, password, etc.
+UserIdDTO, to send the Id of the User once created
+
+For me, I would need the below, DTOs: (Validations will be here in the DTOs)
+1. UserDTO, to send the details of the person when they are created in the profile section page. (Presently no usecase, this is sent for the first time user logged into the page like the session)
+2. UserIdDTO, is also not needed, as I am storing only two parameters, name and the email, UserDTO will be sufficient
+3. No UserCreationDTO, needed, because, there is no password, etc. needed for our page
+4. ErrorFileDTO, to get the error file details from the client
+5. ErrorCardDTO, to send card only details to the client, by using a different query to the DB. This is the minimal basic ErrorFile Details sent.

@@ -2,7 +2,7 @@ package com.opdinna.error_vault.backend.Controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.opdinna.error_vault.backend.model.User;
+import com.opdinna.error_vault.backend.model.domain.User;
 import com.opdinna.error_vault.backend.service.UserService;
 
 import org.springframework.web.bind.annotation.RequestMapping;

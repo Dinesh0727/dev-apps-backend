@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.opdinna.error_vault.backend.model.User;
+import com.opdinna.error_vault.backend.model.domain.User;
 import com.opdinna.error_vault.backend.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -12,7 +12,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;

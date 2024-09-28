@@ -4,7 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.opdinna.error_vault.backend.model.ErrorFile;
+import com.opdinna.error_vault.backend.model.domain.ErrorFile;
+import com.opdinna.error_vault.backend.model.dto.ErrorCardDTO;
 import com.opdinna.error_vault.backend.repository.ErrorFileRepository;
 
 import jakarta.transaction.Transactional;
@@ -12,7 +13,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class ErrorFileServiceImpl implements ErrorFileService {
 
-    private ErrorFileRepository errorFileRepository;
+    private final ErrorFileRepository errorFileRepository;
 
     public ErrorFileServiceImpl(ErrorFileRepository errorFileRepository) {
         this.errorFileRepository = errorFileRepository;
@@ -28,6 +29,11 @@ public class ErrorFileServiceImpl implements ErrorFileService {
     @Transactional
     public void deleteErrorFile(int id) {
         errorFileRepository.deleteById(id);
+    }
+
+    @Override
+    public List<ErrorCardDTO> getAllErrorCards() {
+        return errorFileRepository.getAllErrorFileCards();
     }
 
     @Override
