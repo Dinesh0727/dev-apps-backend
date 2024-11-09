@@ -80,7 +80,7 @@ public class ErrorFileController {
         errorFileService.addErrorFile(file);
 
         // Return a response or further processing
-        return "Processed error file with title: ";
+        return "Processed error file with title: " + projectTitle;
     }
 
     @DeleteMapping("/deleteErrorFile/{id}")
