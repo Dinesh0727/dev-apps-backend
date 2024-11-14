@@ -21,8 +21,8 @@ public class ErrorFileServiceImpl implements ErrorFileService {
 
     @Override
     @Transactional
-    public void addErrorFile(ErrorFile e) {
-        errorFileRepository.save(e);
+    public ErrorFile addErrorFile(ErrorFile e) {
+        return errorFileRepository.save(e);
     }
 
     @Override

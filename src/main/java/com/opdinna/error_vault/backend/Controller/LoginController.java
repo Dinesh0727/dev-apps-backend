@@ -1,26 +1,25 @@
 package com.opdinna.error_vault.backend.Controller;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.api.client.auth.openidconnect.IdToken.Payload;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-
-import net.minidev.json.JSONObject;
-
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.Collections;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.opdinna.error_vault.backend.model.domain.User;
 import com.opdinna.error_vault.backend.service.UserService;
+
+import net.minidev.json.JSONObject;
 
 @RestController
 @RequestMapping("/api")
@@ -75,13 +74,13 @@ public class LoginController {
 
     private void callToDataBase(String username, String email) {
 
-        User check = userService.getUser(email);
+        User user = userService.getUser(email);
 
-        User user = new User(username, email);
-
-        if (check == null) {
-            userService.addUser(user);
+        if(user == null){
+            user = new User(username, email);
         }
+        
+        userService.addUser(user);
     }
 
 }

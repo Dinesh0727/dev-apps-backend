@@ -1,6 +1,7 @@
 package com.opdinna.error_vault.backend.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -28,8 +29,11 @@ public class UserServiceImpl implements UserService {
     }
 
     public User getUser(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new NullPointerException("There is no user with email : " + email));
+        Optional<User> user = userRepository.findByEmail(email);
+        if(user.isEmpty()) {
+            return null;
+        } 
+        return user.get();
     }
 
     public void deleteUser(String email) {

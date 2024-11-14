@@ -77,10 +77,10 @@ public class ErrorFileController {
         System.out.println("After CodeFix: " + afterFixText);
 
         ErrorFile file = ErrorFileDTOMapper.toErrorFile(requestBody);
-        errorFileService.addErrorFile(file);
+        ErrorFile addedFile = errorFileService.addErrorFile(file);
 
         // Return a response or further processing
-        return "Processed error file with title: " + projectTitle;
+        return String.valueOf(addedFile.getId());
     }
 
     @DeleteMapping("/deleteErrorFile/{id}")

@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.opdinna.error_vault</groupId>
-	<artifactId>frontend</artifactId>
+	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>frontend</name>
-	<description>Demo project for Spring Boot</description>
+	<name>backend</name>
+	<description>Dev Apps</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -85,11 +85,6 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>  
-			<groupId>org.projectlombok</groupId>  
-			<artifactId>lombok</artifactId>  
-			<version>1.18.26</version> 
-		</dependency>  
 	</dependencies>
 
 	<build>

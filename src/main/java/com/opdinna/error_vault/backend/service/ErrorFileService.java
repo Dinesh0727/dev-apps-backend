@@ -13,7 +13,7 @@ public interface ErrorFileService {
     // type in Controller
     public ErrorFile getErrorFile(int id);
 
-    public void addErrorFile(ErrorFile e);
+    public ErrorFile addErrorFile(ErrorFile e);
 
     public void deleteErrorFile(int id);
 
