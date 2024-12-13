@@ -6,7 +6,7 @@ import com.opdinna.error_vault.backend.model.domain.User;
 
 public interface UserService {
 
-    public void addUser(User user);
+    public User addUser(User user);
 
     public List<User> getUsers();
 

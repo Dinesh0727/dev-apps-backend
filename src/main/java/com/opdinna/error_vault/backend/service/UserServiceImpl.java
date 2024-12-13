@@ -20,8 +20,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-    public void addUser(User user) {
-        userRepository.save(user);
+    public User addUser(User user) {
+        return userRepository.save(user);
     }
 
     public List<User> getUsers() {
@@ -30,9 +30,9 @@ public class UserServiceImpl implements UserService {
 
     public User getUser(String email) {
         Optional<User> user = userRepository.findByEmail(email);
-        if(user.isEmpty()) {
+        if (user.isEmpty()) {
             return null;
-        } 
+        }
         return user.get();
     }
 

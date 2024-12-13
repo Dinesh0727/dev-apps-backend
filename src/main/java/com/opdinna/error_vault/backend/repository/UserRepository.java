@@ -8,8 +8,10 @@ import org.springframework.stereotype.Repository;
 import com.opdinna.error_vault.backend.model.domain.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
+public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+
+    Boolean existsByEmail(String email);
 
     void deleteByEmail(String email);
 }
