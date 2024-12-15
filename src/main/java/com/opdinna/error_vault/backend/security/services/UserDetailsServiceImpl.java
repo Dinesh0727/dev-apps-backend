@@ -9,12 +9,15 @@ import org.springframework.stereotype.Component;
 import com.opdinna.error_vault.backend.model.domain.User;
 import com.opdinna.error_vault.backend.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
+
 @Component
 public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     private UserRepository userRepository;
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with the email " + email));

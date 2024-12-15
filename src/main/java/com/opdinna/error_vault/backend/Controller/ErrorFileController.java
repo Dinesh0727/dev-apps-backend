@@ -35,7 +35,7 @@ public class ErrorFileController {
         return allErrorFiles;
     }
 
-    @GetMapping("/")
+    @GetMapping("")
     public List<ErrorCardDTO> getAllErrorFileCards() {
         System.out.println("Got a call to fetch all error cards " +
                 System.currentTimeMillis());
