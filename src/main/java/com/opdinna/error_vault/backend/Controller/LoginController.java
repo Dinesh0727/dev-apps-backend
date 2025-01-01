@@ -1,11 +1,23 @@
 package com.opdinna.error_vault.backend.Controller;
 
+import com.google.api.client.auth.openidconnect.IdToken.Payload;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.opdinna.error_vault.backend.model.domain.ERole;
 import com.opdinna.error_vault.backend.model.domain.RefreshToken;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import com.opdinna.error_vault.backend.model.domain.Role;
+import com.opdinna.error_vault.backend.model.domain.User;
+import com.opdinna.error_vault.backend.repository.RefreshTokenRepository;
+import com.opdinna.error_vault.backend.repository.RoleRepository;
+import com.opdinna.error_vault.backend.security.jwt.JwtUtils;
+import com.opdinna.error_vault.backend.service.UserService;
+import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import net.minidev.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,29 +26,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.api.client.auth.openidconnect.IdToken.Payload;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import com.opdinna.error_vault.backend.model.domain.ERole;
-import com.opdinna.error_vault.backend.model.domain.Role;
-import com.opdinna.error_vault.backend.model.domain.User;
-import com.opdinna.error_vault.backend.repository.RefreshTokenRepository;
-import com.opdinna.error_vault.backend.repository.RoleRepository;
-import com.opdinna.error_vault.backend.security.jwt.JwtUtils;
-import com.opdinna.error_vault.backend.service.UserService;
-
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import net.minidev.json.JSONObject;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -65,7 +64,7 @@ public class LoginController {
 
     @PostMapping("/tokens")
     public ResponseEntity<?> postMethodName(@RequestBody JSONObject credentialResponse, HttpServletRequest request,
-            HttpServletResponse response) {
+                                            HttpServletResponse response) {
 
         String idTokenString = credentialResponse.getAsString("credential");
 
@@ -127,9 +126,14 @@ public class LoginController {
     boolean validJwtTokenInInitialLogin(Cookie[] cookies) {
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("jwt".equals(cookie.getName()) && jwtUtils.validateJwtToken(cookie.getValue())) {
-                    logger.info("Valid jwt cookie present in the initial login request");
-                    return true;
+                try {
+                    if ("jwt".equals(cookie.getName()) && jwtUtils.validateJwtToken(cookie.getValue())) {
+                        logger.info("Valid jwt cookie present in the initial login request");
+                        return true;
+                    }
+                } catch (ExpiredJwtException e) {
+                    logger.error("The Jwt token in the initial login has expired");
+                    return false;
                 }
             }
             logger.info("No jwt cookie present in initial login");
@@ -153,13 +157,9 @@ public class LoginController {
         // Validate the refresh token
         if (refreshToken != null && jwtUtils.validateRefreshToken(refreshToken)) {
             String email = null;
-            if (jwt != null) {
-                email = jwtUtils.getEmailFromJwtToken(refreshToken);
-            } else {
-                RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
-                        .orElseThrow(() -> new RuntimeException("No user found with given refresh-token "));
-                email = token.getUser().getEmail();
-            }
+            RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
+                    .orElseThrow(() -> new RuntimeException("No user found with given refresh-token "));
+            email = token.getUser().getEmail();
 
             String newJwtToken = jwtUtils.generateJwtToken(email);
 

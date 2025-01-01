@@ -1,7 +1,12 @@
 package com.opdinna.error_vault.backend.security.jwt;
 
-import java.io.IOException;
-
+import com.opdinna.error_vault.backend.security.services.UserDetailsServiceImpl;
+import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +18,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.opdinna.error_vault.backend.security.services.UserDetailsServiceImpl;
-
-import io.jsonwebtoken.ExpiredJwtException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 public class AuthTokenFilter extends OncePerRequestFilter {
 
@@ -53,11 +51,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String jwt = "", refreshToken = "";
 
             // Retrieve jwt and refresh tokens from cookies
-            for (Cookie c : cookies) {
-                if (c != null && "jwt".equals(c.getName())) {
-                    jwt = c.getValue();
-                } else if (c != null && "refreshToken".equals(c.getName())) {
-                    refreshToken = c.getValue();
+            if (cookies != null) {
+                for (Cookie c : cookies) {
+                    if (c != null && "jwt".equals(c.getName())) {
+                        jwt = c.getValue();
+                    } else if (c != null && "refreshToken".equals(c.getName())) {
+                        refreshToken = c.getValue();
+                    }
                 }
             }
             System.out.println("JWT cookie is " + jwt);
@@ -65,15 +65,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
             boolean validJwtToken = false;
 
-            if (jwt != null) {
-
+            if (jwt != null && !jwt.isEmpty()) {
                 try {
                     validJwtToken = jwtUtils.validateJwtToken(jwt);
                 } catch (ExpiredJwtException e) {
                     // Return a response entity that the jwt is expired
                     logger.info("The received jwt token is expired");
-                    response.sendError(421, "The received jwt token is expired");
-                    return;
+                    response.setStatus(421);
+                    response.sendError(421, "The jwt token is expired");
+                    logger.error("The httpServletResponse is " + response.getOutputStream());
                 }
 
                 // Case of valid jwt
@@ -81,8 +81,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     email = jwtUtils.getEmailFromJwtToken(jwt);
 
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
