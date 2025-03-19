@@ -45,7 +45,7 @@ public class JwtUtils {
 
     public String generateJwtToken(String email) {
         return Jwts.builder().setSubject(email).setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + expirationInSec * 1000))
+                .setExpiration(new Date(new Date().getTime() + expirationInSec * 1000L))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }

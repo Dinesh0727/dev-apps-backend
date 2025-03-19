@@ -5,12 +5,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import com.opdinna.error_vault.backend.model.domain.ERole;
-import com.opdinna.error_vault.backend.model.domain.RefreshToken;
-import com.opdinna.error_vault.backend.model.domain.Role;
-import com.opdinna.error_vault.backend.model.domain.User;
-import com.opdinna.error_vault.backend.repository.RefreshTokenRepository;
-import com.opdinna.error_vault.backend.repository.RoleRepository;
+import com.opdinna.error_vault.backend.model.domain.*;
+import com.opdinna.error_vault.backend.repository.*;
 import com.opdinna.error_vault.backend.security.jwt.JwtUtils;
 import com.opdinna.error_vault.backend.service.UserService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -25,22 +21,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
-
 public class LoginController {
+
+    private static final int JWT_EXPIRY = 15 * 60;
+    private static final int REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60;
 
     @Autowired
     private UserService userService;
@@ -52,9 +44,6 @@ public class LoginController {
     private RoleRepository roleRepository;
 
     @Autowired
-    AuthenticationManager authenticationManager;
-
-    @Autowired
     private JwtUtils jwtUtils;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
@@ -63,121 +52,203 @@ public class LoginController {
     private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
 
     @PostMapping("/tokens")
-    public ResponseEntity<?> postMethodName(@RequestBody JSONObject credentialResponse, HttpServletRequest request,
-                                            HttpServletResponse response) {
+    public ResponseEntity<?> handleLogin(@RequestBody JSONObject credentialResponse,
+                                         HttpServletRequest request,
+                                         HttpServletResponse response) {
+        Cookie[] cookies = request.getCookies();
+        // First try token-based auth if cookies exist
+        if (cookies != null && credentialResponse == null) {
+            // First check JWT
+            Optional<Cookie> jwtCookie = Arrays.stream(cookies)
+                    .filter(c -> "jwt".equals(c.getName()))
+                    .findFirst();
 
-        String idTokenString = credentialResponse.getAsString("credential");
-
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                .setAudience(Collections.singletonList(CLIENT_ID))
-                .build();
-
-        try {
-            GoogleIdToken idToken = verifier.verify(idTokenString);
-
-            if (idToken != null) {
-                Payload payload = idToken.getPayload();
-
-                String username = (String) payload.get("name");
-                String email = (String) payload.get("email");
-
-                User user = userService.getUser(email);
-
-                if (user == null) {
-                    user = new User(username, email);
-                    Set<Role> roles = new HashSet<>();
-                    Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                    roles.add(userRole);
-                    user.setRoles(roles);
-                    userService.addUser(user);
-                }
-
-                // Check for the jwt cookie - Can be removed after testing
-                if (validJwtTokenInInitialLogin(request.getCookies())) {
-                    return ResponseEntity.ok().body("Login successful");
-                }
-
-                // Generate the jwt token and return it in response entity
-                String jwt = jwtUtils.generateJwtToken(email);
-                ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt).httpOnly(true).sameSite("lax")
-                        .secure(false)
-                        .maxAge(15 * 60).path("/").build();
-                System.out.println(jwtCookie.toString());
-
-                String refreshToken = jwtUtils.generateNewRefreshToken(user).getToken();
-                ResponseCookie refreshTokenCookie = ResponseCookie.from("refresh-token", refreshToken).httpOnly(true)
-                        .sameSite("lax")
-                        .secure(false)
-                        .maxAge(15 * 60).path("/api/refresh-token").build();
-                System.out.println(refreshTokenCookie.toString());
-
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.SET_COOKIE, jwtCookie.toString(), refreshTokenCookie.toString()).build();
-            } else {
-                return ResponseEntity.badRequest().body("Invalid Google ID token");
-            }
-        } catch (IOException | GeneralSecurityException e) {
-            return ResponseEntity.internalServerError().body("Error during token verification: " + e.getMessage());
-        }
-    }
-
-    // Can be removed after testing
-    boolean validJwtTokenInInitialLogin(Cookie[] cookies) {
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
+            if (jwtCookie.isPresent()) {
                 try {
-                    if ("jwt".equals(cookie.getName()) && jwtUtils.validateJwtToken(cookie.getValue())) {
-                        logger.info("Valid jwt cookie present in the initial login request");
-                        return true;
+                    String jwt = jwtCookie.get().getValue();
+                    if (jwtUtils.validateJwtToken(jwt)) {
+                        // JWT is valid, no need to do anything
+                        return ResponseEntity.ok().body("Token still valid");
                     }
                 } catch (ExpiredJwtException e) {
-                    logger.error("The Jwt token in the initial login has expired");
-                    return false;
+                    // JWT expired, now check refresh token
+                    Optional<Cookie> refreshCookie = Arrays.stream(cookies)
+                            .filter(c -> "refresh-token".equals(c.getName()))
+                            .findFirst();
+
+                    if (refreshCookie.isPresent()) {
+                        String refreshToken = refreshCookie.get().getValue();
+                        try {
+                            if (jwtUtils.validateRefreshToken(refreshToken)) {
+                                // Generate new JWT
+                                RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
+                                        .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+                                return generateTokenResponse(token.getUser(), false);
+                            }
+                        } catch (Exception ex) {
+                            logger.error("Error validating refresh token", ex);
+                            // Clear invalid cookies
+                            return ResponseEntity.ok()
+                                    .header(HttpHeaders.SET_COOKIE, clearCookies())
+                                    .body("Please login again");
+                        }
+                    }
                 }
             }
-            logger.info("No jwt cookie present in initial login");
         }
-        logger.info("No jwt cookie in initial login request!!!");
-        return false;
+
+        // If we get here, either no valid tokens or Google credentials provided
+        if (credentialResponse == null) {
+            return ResponseEntity.badRequest().body("No authentication provided");
+        }
+        return googleLogin(credentialResponse);
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        String jwt = null, refreshToken = null;
-
-        for (Cookie cookie : request.getCookies()) {
-            if ("jwt".equals(cookie.getName())) {
-                jwt = cookie.getValue();
-            } else if ("refresh-token".equals(cookie.getName())) {
-                refreshToken = cookie.getValue();
-            }
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return ResponseEntity.badRequest().body("No cookies present");
         }
 
-        // Validate the refresh token
-        if (refreshToken != null && jwtUtils.validateRefreshToken(refreshToken)) {
-            String email = null;
-            RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
-                    .orElseThrow(() -> new RuntimeException("No user found with given refresh-token "));
-            email = token.getUser().getEmail();
+        Optional<Cookie> refreshCookie = Arrays.stream(cookies)
+                .filter(c -> "refresh-token".equals(c.getName()))
+                .findFirst();
 
-            String newJwtToken = jwtUtils.generateJwtToken(email);
+        if (refreshCookie.isEmpty()) {
+            return ResponseEntity.badRequest().body("No refresh token cookie found");
+        }
 
-            ResponseCookie responseCookie = ResponseCookie.from("jwt", newJwtToken).httpOnly(true).sameSite("lax")
-                    .secure(false)
-                    .maxAge(15 * 60).path("/").build();
+        String refreshToken = refreshCookie.get().getValue();
+        try {
+            if (jwtUtils.validateRefreshToken(refreshToken)) {
+                RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
+                        .orElseThrow(() -> new RuntimeException("Refresh token not found"));
 
-            logger.info(responseCookie.toString());
+                // Delete old refresh token
+                refreshTokenRepository.delete(token);
 
-            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString()).build();
-        } else {
-            try {
-                response.sendError(422, "Refresh token is expired, logging out!!!");
-            } catch (IOException e) {
-                e.printStackTrace();
+                // Generate new tokens with rotation
+                return generateTokenResponse(token.getUser(), true);
+            } else {
+                return ResponseEntity.badRequest()
+                        .header(HttpHeaders.SET_COOKIE, clearCookies())
+                        .body("Invalid refresh token");
             }
-            return ResponseEntity.ok().body("Refresh token is expired, logging out!!!");
+        } catch (Exception e) {
+            logger.error("Error refreshing token", e);
+            return ResponseEntity.badRequest()
+                    .header(HttpHeaders.SET_COOKIE, clearCookies())
+                    .body("Session expired");
         }
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            Optional<Cookie> refreshCookie = Arrays.stream(cookies)
+                    .filter(c -> "refresh-token".equals(c.getName()))
+                    .findFirst();
+
+            refreshCookie.flatMap(cookie -> refreshTokenRepository.findByToken(cookie.getValue())).ifPresent(refreshTokenRepository::delete);
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearCookies())
+                .body("Logged out successfully");
+    }
+
+    private ResponseEntity<?> googleLogin(JSONObject credentialResponse) {
+        try {
+            String idTokenString = credentialResponse.getAsString("credential");
+            if (idTokenString == null) {
+                return ResponseEntity.badRequest().body("No Google credential provided");
+            }
+
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(CLIENT_ID))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken == null) {
+                return ResponseEntity.badRequest().body("Invalid Google ID token");
+            }
+
+            Payload payload = idToken.getPayload();
+            String email = (String) payload.get("email");
+            String username = (String) payload.get("name");
+
+            User user = userService.getUser(email);
+            if (user == null) {
+                user = createNewUser(username, email);
+            }
+
+            return generateTokenResponse(user, true);
+
+        } catch (IOException | GeneralSecurityException e) {
+            logger.error("Error during authentication", e);
+            return ResponseEntity.internalServerError().body("Authentication failed");
+        }
+    }
+
+    private User createNewUser(String username, String email) {
+        User user = new User(username, email);
+        Set<Role> roles = new HashSet<>();
+        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        roles.add(userRole);
+        user.setRoles(roles);
+        return userService.addUser(user);
+    }
+
+    private ResponseEntity<?> generateTokenResponse(User user, boolean newRefreshToken) {
+        String jwt = jwtUtils.generateJwtToken(user.getEmail());
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
+                .httpOnly(true)
+                .sameSite("Strict")
+                .secure(true)
+                .maxAge(JWT_EXPIRY)
+                .path("/")
+                .build();
+
+        List<String> cookies = new ArrayList<>();
+        cookies.add(jwtCookie.toString());
+
+        if (newRefreshToken) {
+            String refreshToken = jwtUtils.generateNewRefreshToken(user).getToken();
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refresh-token", refreshToken)
+                    .httpOnly(true)
+                    .sameSite("Strict")
+                    .secure(true)
+                    .maxAge(REFRESH_TOKEN_EXPIRY)
+                    .path("/")
+                    .build();
+            cookies.add(refreshTokenCookie.toString());
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookies.toArray(new String[0]))
+                .body("Authentication successful");
+    }
+
+    private String[] clearCookies() {
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .sameSite("Strict")
+                .secure(true)
+                .maxAge(0)
+                .path("/")
+                .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh-token", "")
+                .httpOnly(true)
+                .sameSite("Strict")
+                .secure(true)
+                .maxAge(0)
+                .path("/")
+                .build();
+
+        return new String[]{jwtCookie.toString(), refreshCookie.toString()};
+    }
 }
